@@ -1,1 +1,503 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram File Bot Status Dashboard</title>
+    <style>
+        :root {
+            --primary: #2e86de;
+            --success: #10ac84;
+            --warning: #ff9f43;
+            --danger: #ee5253;
+            --dark: #222f3e;
+            --light: #f5f6fa;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), #1e62d0);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+        }
+        
+        header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .status-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        
+        .card-icon i {
+            font-size: 1.5rem;
+        }
+        
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+        
+        .status.connected {
+            background-color: rgba(16, 172, 132, 0.2);
+            color: var(--success);
+        }
+        
+        .status.disconnected {
+            background-color: rgba(238, 82, 83, 0.2);
+            color: var(--danger);
+        }
+        
+        .status.pending {
+            background-color: rgba(255, 159, 67, 0.2);
+            color: var(--warning);
+        }
+        
+        .card-details {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+        
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .detail-label {
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+        }
+        
+        .actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 2rem;
+        }
+        
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1e62d0;
+        }
+        
+        .btn-secondary {
+            background-color: var(--light);
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #e4e6ef;
+        }
+        
+        .refresh-btn {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--light);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s ease;
+        }
+        
+        .refresh-btn:hover {
+            background: #e4e6ef;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            display: none;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 1.5rem;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+        
+        @media (max-width: 768px) {
+            .status-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Telegram File Bot Dashboard</h1>
+            <p>Monitor your bot's connection status and storage health</p>
+        </header>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2>Connection Status</h2>
+            <button class="refresh-btn" id="refreshBtn">
+                <span>Refresh</span>
+                <div class="spinner" id="refreshSpinner"></div>
+            </button>
+        </div>
+        
+        <div class="status-cards">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="color: #2e86de;">
+                        <i>🤖</i>
+                    </div>
+                    <div>
+                        <div class="card-title">Telegram Bot</div>
+                        <div class="status pending" id="botStatus">Checking...</div>
+                    </div>
+                </div>
+                <div class="card-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Status:</span>
+                        <span class="detail-value" id="botStatusText">Verifying connection</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Bot Name:</span>
+                        <span class="detail-value" id="botName">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Username:</span>
+                        <span class="detail-value" id="botUsername">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="color: #10ac84;">
+                        <i>☁️</i>
+                    </div>
+                    <div>
+                        <div class="card-title">Wasabi Storage</div>
+                        <div class="status pending" id="wasabiStatus">Checking...</div>
+                    </div>
+                </div>
+                <div class="card-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Status:</span>
+                        <span class="detail-value" id="wasabiStatusText">Testing connection</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Bucket:</span>
+                        <span class="detail-value" id="wasabiBucket">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Region:</span>
+                        <span class="detail-value" id="wasabiRegion">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon" style="color: #ff9f43;">
+                        <i>📢</i>
+                    </div>
+                    <div>
+                        <div class="card-title">Telegram Channel</div>
+                        <div class="status pending" id="channelStatus">Checking...</div>
+                    </div>
+                </div>
+                <div class="card-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Status:</span>
+                        <span class="detail-value" id="channelStatusText">Verifying connection</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Channel ID:</span>
+                        <span class="detail-value" id="channelId">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Backup Enabled:</span>
+                        <span class="detail-value" id="backupStatus">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button class="btn btn-primary" id="testAllBtn">
+                <span>Test All Connections</span>
+            </button>
+            <button class="btn btn-secondary" onclick="window.location.href='https://t.me/your_bot_username'">
+                <span>Open Telegram Bot</span>
+            </button>
+        </div>
+        
+        <footer>
+            <p>Telegram File Bot Dashboard • Powered by Wasabi Cloud Storage</p>
+            <p>Status last updated: <span id="lastUpdated">-</span></p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const refreshBtn = document.getElementById('refreshBtn');
+            const refreshSpinner = document.getElementById('refreshSpinner');
+            const testAllBtn = document.getElementById('testAllBtn');
+            const lastUpdated = document.getElementById('lastUpdated');
+            
+            // Status elements
+            const botStatus = document.getElementById('botStatus');
+            const botStatusText = document.getElementById('botStatusText');
+            const botName = document.getElementById('botName');
+            const botUsername = document.getElementById('botUsername');
+            
+            const wasabiStatus = document.getElementById('wasabiStatus');
+            const wasabiStatusText = document.getElementById('wasabiStatusText');
+            const wasabiBucket = document.getElementById('wasabiBucket');
+            const wasabiRegion = document.getElementById('wasabiRegion');
+            
+            const channelStatus = document.getElementById('channelStatus');
+            const channelStatusText = document.getElementById('channelStatusText');
+            const channelId = document.getElementById('channelId');
+            const backupStatus = document.getElementById('backupStatus');
+            
+            // Update timestamp
+            function updateTimestamp() {
+                const now = new Date();
+                lastUpdated.textContent = now.toLocaleString();
+            }
+            
+            // Simulate checking bot connection
+            function checkBotConnection() {
+                botStatus.className = 'status pending';
+                botStatus.textContent = 'Checking...';
+                botStatusText.textContent = 'Verifying connection';
+                
+                // Simulate API call
+                setTimeout(() => {
+                    // In a real implementation, you would make an API call to your backend
+                    // For demo purposes, we're simulating success
+                    const isConnected = Math.random() > 0.2; // 80% chance of success
+                    
+                    if (isConnected) {
+                        botStatus.className = 'status connected';
+                        botStatus.textContent = 'Connected';
+                        botStatusText.textContent = 'Bot is online and responsive';
+                        botName.textContent = 'File Storage Bot';
+                        botUsername.textContent = '@your_file_bot';
+                    } else {
+                        botStatus.className = 'status disconnected';
+                        botStatus.textContent = 'Disconnected';
+                        botStatusText.textContent = 'Unable to connect to Telegram';
+                        botName.textContent = '-';
+                        botUsername.textContent = '-';
+                    }
+                    
+                    updateTimestamp();
+                }, 1500);
+            }
+            
+            // Simulate checking Wasabi connection
+            function checkWasabiConnection() {
+                wasabiStatus.className = 'status pending';
+                wasabiStatus.textContent = 'Checking...';
+                wasabiStatusText.textContent = 'Testing connection';
+                
+                // Simulate API call
+                setTimeout(() => {
+                    // In a real implementation, you would make an API call to your backend
+                    // For demo purposes, we're simulating success
+                    const isConnected = Math.random() > 0.3; // 70% chance of success
+                    
+                    if (isConnected) {
+                        wasabiStatus.className = 'status connected';
+                        wasabiStatus.textContent = 'Connected';
+                        wasabiStatusText.textContent = 'Storage is accessible';
+                        wasabiBucket.textContent = 'your-file-bucket';
+                        wasabiRegion.textContent = 'us-east-1';
+                    } else {
+                        wasabiStatus.className = 'status disconnected';
+                        wasabiStatus.textContent = 'Disconnected';
+                        wasabiStatusText.textContent = 'Cannot access Wasabi storage';
+                        wasabiBucket.textContent = '-';
+                        wasabiRegion.textContent = '-';
+                    }
+                    
+                    updateTimestamp();
+                }, 2000);
+            }
+            
+            // Simulate checking channel connection
+            function checkChannelConnection() {
+                channelStatus.className = 'status pending';
+                channelStatus.textContent = 'Checking...';
+                channelStatusText.textContent = 'Verifying connection';
+                
+                // Simulate API call
+                setTimeout(() => {
+                    // In a real implementation, you would make an API call to your backend
+                    // For demo purposes, we're simulating success
+                    const isConnected = Math.random() > 0.4; // 60% chance of success
+                    const hasChannel = Math.random() > 0.5; // 50% chance of having a channel configured
+                    
+                    if (isConnected && hasChannel) {
+                        channelStatus.className = 'status connected';
+                        channelStatus.textContent = 'Connected';
+                        channelStatusText.textContent = 'Channel is accessible';
+                        channelId.textContent = '-1001234567890';
+                        backupStatus.textContent = 'Yes';
+                    } else if (!hasChannel) {
+                        channelStatus.className = 'status pending';
+                        channelStatus.textContent = 'Not Configured';
+                        channelStatusText.textContent = 'No backup channel configured';
+                        channelId.textContent = '-';
+                        backupStatus.textContent = 'No';
+                    } else {
+                        channelStatus.className = 'status disconnected';
+                        channelStatus.textContent = 'Disconnected';
+                        channelStatusText.textContent = 'Cannot access Telegram channel';
+                        channelId.textContent = '-';
+                        backupStatus.textContent = 'No';
+                    }
+                    
+                    updateTimestamp();
+                }, 1800);
+            }
+            
+            // Check all connections
+            function checkAllConnections() {
+                refreshSpinner.style.display = 'block';
+                refreshBtn.disabled = true;
+                testAllBtn.disabled = true;
+                
+                checkBotConnection();
+                checkWasabiConnection();
+                checkChannelConnection();
+                
+                // Hide spinner after all checks complete
+                setTimeout(() => {
+                    refreshSpinner.style.display = 'none';
+                    refreshBtn.disabled = false;
+                    testAllBtn.disabled = false;
+                }, 2500);
+            }
+            
+            // Event listeners
+            refreshBtn.addEventListener('click', checkAllConnections);
+            testAllBtn.addEventListener('click', checkAllConnections);
+            
+            // Initial check
+            checkAllConnections();
+            updateTimestamp();
+            
+            // Auto-refresh every 2 minutes
+            setInterval(checkAllConnections, 120000);
+        });
+    </script>
+</body>
+  </html>
