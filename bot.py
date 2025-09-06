@@ -1144,16 +1144,7 @@ Please send the file you want to upload!
                 return render_template("index.html")
 
             app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=False)
-
-        except KeyboardInterrupt:
-            self.logger.info("Bot stopped by user")
-        except Exception as e:
-            self.logger.error(f"Fatal error: {e}")
-            raise
-        finally:
-            self.running = False
-            self.db.close()
-            self.logger.info("🛑 Bot shutdown 
+ 
 
 async def main():
     """Main function"""
