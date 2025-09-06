@@ -1134,20 +1134,9 @@ Please send the file you want to upload!
             self.logger.info("🔐 Telegram Fili Bot starting up...")
             self.logger.info(f"🌐 Server binding to port {os.getenv('PORT', 5000)}")
 
-            # Start bot in a separate thread
-            bot_thread = threading.Thread(target=self.start_polling, daemon=True)
-            bot_thread.start()
-
             # Start Flask web server
             app = Flask(__name__, template_folder="templates")
-
-            @app.route("/")
-            def index():
-                return render_template("index.html")
-
-            app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=False)
- 
-
+            
 async def main():
     """Main function"""
     try:
