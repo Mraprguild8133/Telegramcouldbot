@@ -1094,23 +1094,6 @@ Please send the file you want to upload!
         logger.info("Stopping bot...")
         await self.app.stop()
 
-# ---------------- HEALTH CHECK ----------------
-    def _health_check(self):
-        """Periodic health check and restart if needed"""
-        while self.running:
-            try:
-                time.sleep(300)  # Check every 5 minutes
-                self.bot.get_me()
-                self.logger.info("🟢 Bot health check passed")
-            except Exception as e:
-                self.logger.error(f"🔴 Bot health check failed: {e}")
-                if self.running:
-                    self.logger.info("Attempting to restart bot polling...")
-                    try:
-                        self.start_polling()
-                    except Exception as restart_error:
-                        self.logger.error(f"Failed to restart bot: {restart_error}")
-
     # ---------------- POLLING ----------------
     def start_polling(self):
         """Start bot polling with error recovery"""
